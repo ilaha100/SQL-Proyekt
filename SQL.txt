@@ -1,0 +1,122 @@
+--1 Hazırda neçə məhsul olduğunu təyin edən sorğunu yazın.
+    
+select count(*) as product_sayi from product;
+
+--2 Son bir ayda konkret təchizatçıdan alınmış bütün məhsulların ümumi alış qiyməti nə qədər olduğunu təyin edən sorğunu yazın. 
+    
+select productname, 
+       sum(purchaseprice), 
+       suppliername 
+from product p 
+left join purchase pu on p.productid = pu.productid 
+left join supplier s on pu.supplierid = s.supplierid
+where purchasedate between add_months(sysdate, -1) and sysdate
+group by productname, suppliername
+order by productname;
+
+--3 Hansı təchizatçı son rübdə ən çox məhsul təqdim etdiyini göstərən sorğunu yazın. 
+
+select suppliername,
+       count(p.productid) as products_supplied
+from product p 
+left join purchase pu on p.productid = pu.productid 
+left join supplier s on pu.supplierid = s.supplierid
+where purchasedate between add_months(sysdate, -3) and sysdate
+group by suppliername
+order by products_supplied desc fetch first 1 rows only;
+   
+--4 Ötən həftə nə qədər satış həyata keçirildiyini təyin edən sorğunu yazın. 
+
+select sum(quantitysold * saleprice) as cem
+from sale
+where saledate between trunc(sysdate-7)  and trunc(sysdate-1);
+
+--5 Hansı məhsulun qiymətinin ən yüksək olduğunu təyin edən sorğunu yazın. 
+select productname,
+       price
+from product
+order by price desc fetch first 1 row only;
+ 
+--6 Nə qədər məhsul alınıb, lakin hələ də satılmadığını təyin edən sorğunu yazın. 
+
+select productname,
+       count(pu.productid)
+from product p 
+left join purchase pu on p.productid = pu.productid
+left join sale s on s.productid = pu.productid
+where s.productid is null
+group by productname;
+
+--7 Hansı kateqoriyada ən çox məhsul olduğunu təyin edən sorğunu yazın. 
+
+select c.categoryname, count(p.productid) as product_count
+from category c
+left join product p on c.categoryid = p.categoryid
+group by c.categoryname
+order by product_count desc
+fetch first 1 row only;  
+
+--8 Hər bir məhsulun orta satış qiyməti nə qədər olduğunu göstərən sorğunu yazın. 
+
+select productname,
+       avg(saleprice)
+from product p left join sale s 
+on p.productid = s.productid
+group by productname
+order by productname;
+
+--9 Son bir ayda neçə təchizatçı məhsul tədarük etdiyini bildirən sorğunu yazın. 
+
+select count(distinct s.supplierid) as supplier_count
+from product p 
+left join purchase pu on p.productid = pu.productid
+left join supplier s on pu.supplierid = s.supplierid
+where purchasedate between add_months(sysdate, -1) and sysdate;
+    
+--10 Son bir ayda hansı məhsullar satılmadığını bildirən sorğunu yazın.
+
+select productname
+from product p 
+left join sale s  on s.productid = p.productid
+left join purchase pu on pu.productid = p.productid
+where s.productid is null 
+and purchasedate between add_months(sysdate, -1) and sysdate;
+
+7 yaza bilim deyə aşağıdakıları əlavə etdim
+alter table product
+add categoryid number;
+
+ALTER TABLE product
+ADD CONSTRAINT fk_category
+foreign key (categoryid) references category(categoryid);
+
+alter table category
+add productid number;
+
+ALTER TABLE category
+ADD CONSTRAINT fk_product
+foreign key (productid) references product(productid);
+
+UPDATE product
+SET categoryid = 1
+WHERE productid = 1;  
+
+UPDATE product
+SET categoryid = 2
+WHERE productid = 2;
+
+UPDATE product
+SET categoryid = 3
+WHERE productid = 3;
+
+UPDATE category
+SET productid = 1
+WHERE categoryid = 1; 
+
+UPDATE category
+SET productid = 2
+WHERE categoryid = 2; 
+
+UPDATE category
+SET productid = 3
+WHERE categoryid = 3; 
